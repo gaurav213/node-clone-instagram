@@ -21,8 +21,8 @@ try {
     await post.remove();
     const user = await User.findById(req.user._id);
     
-    const index = user.posts.indexOf(req.params.id)
-    user.posts.splice(index, 1);
+    const index = user.Post.indexOf(req.params.id)
+    user.Post.splice(index, 1);
     await user.save();
 
 
