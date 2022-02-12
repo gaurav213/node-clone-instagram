@@ -1,4 +1,5 @@
 import User from "../models/User.js"
+import Post from "../models/Post.js"
 export const register = async (req, res) => {
     try {
         const { name, email, password } = req.body;
@@ -6,7 +7,7 @@ export const register = async (req, res) => {
         if (user) {
             return res.
                 status(400).
-                json({ success: false, message: "User already exit" })
+                json({ success: false, message: "User already exists" })
         }
         user = await User.create({
             name,
@@ -138,6 +139,109 @@ user.name=name;
         message: message.error
     })
 }
+}
+export const deleteProfile = async (req,res)=>{
+    try {
+        const user= await User.findById(req.user._id)
+        const posts=user.Post
+        const followers = user.followers
+        const following= user.following
+        const userId= user._id
+     
+
+        await user.remove()
+         //logout user after delete profile
+         res.status(200).cookie("token", null, { expires: new Date(Date.now()), httpOnly: true })
+
+         //post delete
+        for(let i=0; i<posts.length; i++){
+            const post = await Post.findById(posts[1])
+            await post.remove()
+        }
+        //remover user from  followers and following
+        for(let i = 0; i<followers.length; i++){
+            const follower= await User.findById(followers[i]);
+            const index = follower.following.indexOf(userId);
+            follower.following.splice(index,1);
+            await follower.save()
+        }
+        
+        for(let i = 0; i<following.length; i++){
+            const follows= await User.findById(following[i]);
+            const index = follows.followers.indexOf(userId);
+            follows.followers.splice(index,1);
+            await follows.save()
+        }
+        
+        res.status(200).json({
+            success:true,
+            message:"Profile Deleted successfully"
+        })
+
+        
+    } catch (error) {
+        res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+
+export const myProfile = async (req,res)=>{
+    try {
+        const user = await User.findById(req.user._id).populate("Post")
+
+        res.status(200).json({
+            success:true,
+            user
+        })
+        
+    }  catch (error) {
+        res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+export const getUserProfile = async (req,res)=>{
+    try {
+        const user = await User.findById(req.params.id).populate("Post")
+        if(!user){
+            return res.status(404).json({
+                success:false,
+                message:"User not found"
+            })
+        }
+
+        res.status(200).json({
+            success:true,
+            user
+        })
+        
+    }  catch (error) {
+        res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
+}
+
+export const getAllUser = async (req,res)=>{
+    try {
+        const user = await User.find({})
+        
+
+        res.status(200).json({
+            success:true,
+            user
+        })
+        
+    }  catch (error) {
+        res.status(500).json({
+            success:false,
+            message:error.message
+        })
+    }
 }
 
 export default register
